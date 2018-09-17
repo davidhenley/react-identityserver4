@@ -19,7 +19,10 @@ namespace ID4
 
     public void ConfigureServices(IServiceCollection services)
     {
-      services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+      services.AddMvcCore()
+        .AddAuthorization()
+        .AddJsonFormatters()
+        .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
       services.AddSpaStaticFiles(configuration =>
       {
@@ -30,6 +33,14 @@ namespace ID4
         .AddDeveloperSigningCredential()
         .AddInMemoryApiResources(Config.GetApiResources())
         .AddInMemoryClients(Config.GetClients());
+
+      services.AddAuthentication("Bearer")
+        .AddIdentityServerAuthentication(options =>
+        {
+          options.Authority = "https://localhost:5001";
+          options.RequireHttpsMetadata = false;
+          options.ApiName = "api";
+        });
     }
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -44,11 +55,12 @@ namespace ID4
         app.UseHsts();
       }
 
-      app.UseIdentityServer();
-
       app.UseHttpsRedirection();
       app.UseStaticFiles();
       app.UseSpaStaticFiles();
+
+      app.UseIdentityServer();
+      app.UseAuthentication();
 
       app.UseMvc(routes =>
       {
